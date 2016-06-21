@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/kostkobv/sparrow-server#readme",
   "dependencies": {
+    "dotenv": "2.0.x",
     "kalm": "1.1.x",
     "redis": "2.6.x",
     "rsmq": "0.7.x",
