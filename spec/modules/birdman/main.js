@@ -132,13 +132,37 @@ redisCommunicator.init().then(() => {
       port: config.get('REDIS_PORT')
     });
 
-    worker.on('message', (message) => {
+    worker.on('message', (message, next, id) => {
       const data = JSON.parse(message).data;
 
       assert.equal(data[1], tweet.id);
       assert.end();
+      worker.del(id);
+      next();
       worker.quit();
     });
+
+    worker.start();
+  });
+
+  test('Should not emit the message if tweet already exists', (assert) => {
+    redisCommunicator.parse(tweet);
+
+    const worker = new RSMQWorker(config.get('RSMQ_QUEUE_NAME'), {
+      host: config.get('REDIS_HOST'),
+      port: config.get('REDIS_PORT')
+    });
+
+    worker.on('message', (message, next, id) => {
+      assert.fail('Message came.');
+      worker.del(id);
+      next();
+      worker.quit();
+    });
+
+    setTimeout(() => {
+      assert.end();
+    }, 500);
 
     worker.start();
   });

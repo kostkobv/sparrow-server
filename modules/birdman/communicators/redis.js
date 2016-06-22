@@ -41,9 +41,10 @@ function init() {
  * @returns {Promise}
  */
 function createRSMQQueue() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     rsmq.createQueue(rsmqConfigs, (error) => {
       if (error) {
+        reject(error);
         throw new Error(`Couldn't create new Redis Queue, ${error}`);
       }
 
