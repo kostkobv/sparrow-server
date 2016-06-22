@@ -4,7 +4,7 @@
   "description": "Retrieves data from twitter based on provided parameters (based on Node.js)",
   "main": "app.js",
   "scripts": {
-    "test": "./node_modules/tape/bin/tape spec/**/*.js",
+    "test": "NODE_ENV=test ./node_modules/tape/bin/tape debug spec/**/*.js",
     "lint": "./node_modules/eslint/bin/eslint.js ./modules/**/*.js ./app.js"
   },
   "repository": {
@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/kostkobv/sparrow-server#readme",
   "dependencies": {
-    "dotenv": "2.0.x",
+    "config": "1.21.x",
     "kalm": "1.1.x",
     "redis": "2.6.x",
     "rsmq": "0.7.x",
