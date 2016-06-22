@@ -1,7 +1,9 @@
-const config = require('dotenv').config();
+const config = require('config');
 
 const redis = require('redis');
-const redisClient = redis.createClient();
+const redisClient = redis.createClient({
+  db: config.get('REDIS_DB')
+});
 
 const RSMQWorker = require('rsmq-worker');
 
@@ -9,7 +11,9 @@ const test = require('tape');
 
 const redisCommunicator = require('../../../modules/birdman/communicators/redis');
 
-test('Redis communicator should save provided tweet into redis', (assert) => {
+redisClient.flushall();
+
+redisCommunicator.init().then(() => {
   const tweet = {
     created_at: "Tue Jun 21 18:29:14 +0000 2016",
     id: 745322704471887900,
@@ -105,34 +109,41 @@ test('Redis communicator should save provided tweet into redis', (assert) => {
     lang: "en"
   };
 
-  assert.test('Save should trigger the RSMQ message', (assert) => {
-    const worker = new RSMQWorker(config.RSMQ_QUEUE_NAME, {
-      host: config.REDIS_HOST,
-      port: config.REDIS_PORT
+  test('Redis communicator should save provided tweet into redis', (assert) => {
+    redisCommunicator.parse(tweet).then(() => {
+      redisClient.get(`${config.get('REDIS_TWEET_PREFIX')}${tweet.id}`, (err, response) => {
+        assert.error(err, 'Something wrong with redis');
+
+        const parsedResponse = JSON.parse(response);
+
+        assert.equal(parsedResponse[0], 'id');
+        assert.equal(parsedResponse[1], tweet.id);
+
+        redisClient.end(true);
+
+        assert.end();
+      });
+    });
+  });
+
+  test('Save should trigger the RSMQ message', (assert) => {
+    const worker = new RSMQWorker(config.get('RSMQ_QUEUE_NAME'), {
+      host: config.get('REDIS_HOST'),
+      port: config.get('REDIS_PORT')
     });
 
-    worker.on('message', (message, next) => {
-      const data = JSON.parse(message.data);
+    worker.on('message', (message) => {
+      const data = JSON.parse(message).data;
 
-      assert.equal(data.id, tweet.id);
+      assert.equal(data[1], tweet.id);
       assert.end();
-
-      next();
+      worker.quit();
     });
 
     worker.start();
   });
 
-  redisCommunicator.parse(tweet);
-
-  redisClient.get(`${config.REDIS_TWEET_PREFIX}${tweet.id}`, (err, response) => {
-    assert.error(err, 'Something wrong with redis');
-
-    const parsedResponse = JSON.parse(response);
-
-    assert.equal(parsedResponse[0], 'id');
-    assert.equal(parsedResponse[1], tweet.id);
-
-    assert.end();
+  test.onFinish(() => {
+    process.exit();
   });
 });

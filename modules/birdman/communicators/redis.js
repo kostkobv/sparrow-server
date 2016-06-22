@@ -3,18 +3,36 @@
  * to the PigeonPost
  */
 
-const config = require('dotenv').config();
+const config = require('config');
 
 const redis = require('redis');
-const redisClient = redis.createClient();
+const redisClient = redis.createClient({
+  db: config.get('REDIS_DB')
+});
 
 const RedisSMQ = require('rsmq');
-const rsmq = new RedisSMQ({ host: config.REDIS_HOST, port: config.REDIS_PORT });
+const rsmq = new RedisSMQ({ host: config.get('REDIS_HOST'), port: config.get('REDIS_PORT') });
 const rsmqConfigs = {
-  qname: config.RSMQ_QUEUE_NAME
+  qname: config.get('RSMQ_QUEUE_NAME')
 };
 
-const pigeonPost = require('../../pigeonPost/main');
+function init() {
+  return new Promise((resolve) => {
+    rsmq.getQueueAttributes(rsmqConfigs, (err, response) => {
+      if (response) {
+        return resolve();
+      }
+
+      rsmq.createQueue(rsmqConfigs, (error) => {
+        if (error) {
+          throw new Error(`Couldn't create new Redis Queue, ${error}`);
+        }
+
+        resolve();
+      });
+    });
+  });
+}
 
 /**
  * Maps the tweet to redis-friendly format
@@ -43,9 +61,14 @@ function parse(tweets) {
     tweets = [ tweets ];
   }
 
+  const promises = [];
+
   for (const tweet of tweets) {
-    processTweet(tweet);
+    const promise = processTweet(tweet);
+    promises.push(promise);
   }
+
+  return Promise.all(promises);
 }
 
 /**
@@ -54,27 +77,44 @@ function parse(tweets) {
  * @param tweet - tweet that should be processed
  */
 function processTweet(tweet) {
-  const tweetKey = getTweetKey(tweet.id);
-  console.log(JSON.stringify(tweet));
+  return new Promise((resolve, reject) => {
+    const tweetKey = getTweetKey(tweet.id);
+    const tweetsSet = config.get('REDIS_TWEETS_SET');
 
-  redisClient.sismember(config.REDIS_TWEETS_SET, tweet.id, (error, reply) => {
-    if (error) {
-      throw new Error(`Something wrong with redis ${error}`);
-    }
-
-    if (!reply) {
-      redisClient.sadd(config.REDIS_TWEETS_SET, tweet.id);
-      return saveTweet(tweet);
-    }
-
-    redisClient.exists(tweetKey, (err, exists) => {
-      if (err) {
-        throw new Error(`Something wrong with redis ${err}`);
+    redisClient.sismember(tweetsSet, tweet.id, (error, reply) => {
+      if (error) {
+        reject(error);
+        throw new Error(error);
       }
 
-      if (!exists) {
-        saveTweet(tweet);
+      if (!reply) {
+        redisClient.sadd(tweetsSet, tweet.id, (err) => {
+          if (err) {
+            throw new Error(err);
+          }
+
+          return saveTweet(tweet).then(() => {
+            resolve();
+          });
+        });
+
       }
+
+      redisClient.exists(tweetKey, (err, exists) => {
+        if (err) {
+          reject(err);
+          throw new Error(err);
+        }
+
+        if (!exists) {
+          return saveTweet(tweet).then(() => {
+            resolve();
+          });
+        }
+
+        resolve();
+      });
+
     });
   });
 }
@@ -85,12 +125,22 @@ function processTweet(tweet) {
  * @param tweet - a new tweet that should be saved
  */
 function saveTweet(tweet) {
-  const mappedTweet = mapTweet(tweet);
-  const stringifyMappedTweet = JSON.stringify(mappedTweet);
-  const tweetKey = getTweetKey(tweet.id);
+  return new Promise((resolve, reject) => {
+    const mappedTweet = mapTweet(tweet);
+    const stringifyMappedTweet = JSON.stringify(mappedTweet);
+    const tweetKey = getTweetKey(tweet.id);
 
-  redisClient.set(tweetKey, stringifyMappedTweet);
-  sendRsmqMessage(mappedTweet);
+    redisClient.set(tweetKey, stringifyMappedTweet, (err, val) => {
+      if (err) {
+        reject(err);
+        throw new Error(err);
+      }
+
+      sendRsmqMessage(mappedTweet).then(() => {
+        resolve();
+      });
+    });
+  });
 }
 
 /**
@@ -100,7 +150,7 @@ function saveTweet(tweet) {
  * @returns {string} - redis tweet record key
  */
 function getTweetKey(id) {
-  return `${config.REDIS_TWEET_PREFIX}${id}`;
+  return `${config.get('REDIS_TWEET_PREFIX')}${id}`;
 }
 
 /**
@@ -109,15 +159,26 @@ function getTweetKey(id) {
  * @param mappedTweet - already mapped tweet
  */
 function sendRsmqMessage(mappedTweet) {
-  const messageConfig = Object.assign({}, rsmqConfigs, {
-    message: JSON.stringify({
-      data: mappedTweet
-    })
-  });
+  return new Promise((resolve, reject) => {
+    const messageConfig = Object.assign({}, rsmqConfigs, {
+      message: JSON.stringify({
+        data: mappedTweet
+      })
+    });
 
-  rsmq.sendMessage(messageConfig, () => {});
+    rsmq.sendMessage(messageConfig, (err) => {
+      if (err) {
+        reject(err);
+        throw new Error(err);
+      }
+
+      resolve();
+    });
+  });
 }
 
 module.exports = {
-  parse
+  parse,
+  init,
+  rsmq
 };
