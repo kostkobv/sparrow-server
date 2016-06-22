@@ -28,7 +28,7 @@ function init() {
         return resolve();
       }
 
-      createRSMQQueue.then(() => {
+      createRSMQQueue().then(() => {
         resolve();
       });
     });
