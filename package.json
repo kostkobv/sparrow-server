@@ -24,8 +24,10 @@
   },
   "homepage": "https://github.com/kostkobv/sparrow-server#readme",
   "dependencies": {
+    "commander": "^2.9.0",
     "config": "1.21.x",
     "kalm": "1.1.x",
+    "kalm-websocket": "^1.2.0",
     "redis": "2.6.x",
     "rsmq": "0.7.x",
     "rsmq-worker": "0.4.x",
