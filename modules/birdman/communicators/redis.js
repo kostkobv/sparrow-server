@@ -121,6 +121,10 @@ function processTweet(tweet) {
     const tweetKey = getTweetKey(tweet.id);
     const tweetsSet = config.get('REDIS_TWEETS_SET');
 
+    if (tweet.delete) {
+      resolve();
+    }
+
     redisClient.sismember(tweetsSet, tweet.id, (error, member) => {
       if (error) {
         reject(error);
