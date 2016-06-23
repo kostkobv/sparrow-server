@@ -48,6 +48,23 @@ function getLastTwitterPosts(client) {
 }
 
 /**
+ * Starts to listen to the stream and passes the tweets to redis communicator for save
+ *
+ * @param twitterClient - twitter client instance
+ */
+function setupTwitterStreamListener(twitterClient) {
+  const stream = twitterClient.stream(USER_STATUSES_STREAM_ENDPOINT, TWITTER_USER_TO_FOLLOW);
+
+  stream.on('data', (data) => {
+    redisCommunicator.parse(data);
+  });
+
+  stream.on('error', (error) => {
+    throw new Error(`Twitter error, ${error}`);
+  });
+}
+
+/**
  * Inits the module.
  *
  * First inits the redis communicator.
@@ -64,23 +81,6 @@ function initBirdman() {
 
     setupTwitterStreamListener(twitterClient);
   });
-}
-
-/**
- * Starts to listen to the stream and passes the tweets to redis communicator for save
- *
- * @param twitterClient - twitter client instance
- */
-function setupTwitterStreamListener(twitterClient) {
-  const stream = twitterClient.stream(USER_STATUSES_STREAM_ENDPOINT, TWITTER_USER_TO_FOLLOW);
-
-  stream.on('data', (data) => {
-    redisCommunicator.parse(data);
-  });
-
-  stream.on('error', (error) => {
-    throw new Error(`Twitter error, ${error}`);
-  })
 }
 
 module.exports = initBirdman;
