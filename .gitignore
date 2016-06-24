@@ -90,3 +90,4 @@ fabric.properties
 
 config/development.json
 config/test.json
+config/production.json

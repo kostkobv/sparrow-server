@@ -7,6 +7,9 @@ Retrieves data from twitter based on provided parameters (based on Node.js)
 
 Please make sure that your node.js version is the same as in `.nvmrc`
 
+##Configuration
+Don't forget to fill up the configs in `./config` folder!
+
 ##Development
 `npm test` - to run tests
 `npm run lint` - to check code styles
