@@ -88,4 +88,5 @@ fabric.properties
 # *.iml
 # modules.xml
 
-.env
+config/development.json
+config/test.json
