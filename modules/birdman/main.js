@@ -80,6 +80,8 @@ function initBirdman() {
     });
 
     setupTwitterStreamListener(twitterClient);
+
+    console.log('Birdman is up and listening');
   });
 }
 
