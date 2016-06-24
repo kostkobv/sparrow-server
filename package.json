@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "NODE_ENV=test ./node_modules/tape/bin/tape debug spec/**/*.js",
-    "lint": "./node_modules/eslint/bin/eslint.js ./modules/**/*.js ./app.js"
+    "lint": "./node_modules/eslint/bin/eslint.js ./modules/**/*.js ./app.js",
+    "develop": "./node_modules/pm2/bin/pm2-dev pm2-dev.json"
   },
   "repository": {
     "type": "git",

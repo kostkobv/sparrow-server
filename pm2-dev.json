@@ -1,0 +1,34 @@
+{
+  "apps" : [
+    {
+      "name"        : "birdman",
+      "script"      : "app.js",
+      "watch"       : "./modules/birdman",
+      "node_args"   : ["--debug=5858", "app.js", "module", "birdman"],
+      "merge_logs"  : true,
+      "cwd"         : "./",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "env_tests": {
+        "NODE_ENV": "test",
+        "TEST": true
+      }
+    },
+    {
+      "name"        : "pigeonPost",
+      "script"      : "app.js",
+      "watch"       : "./modules/pigeonPost",
+      "node_args"   : ["--debug=5859", "app.js", "module", "pigeonPost"],
+      "merge_logs"  : true,
+      "cwd"         : "./",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "env_tests": {
+        "NODE_ENV": "test",
+        "TEST": true
+      }
+    }
+  ]
+}
