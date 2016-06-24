@@ -4,7 +4,7 @@ const pigeonPost = require('./modules/pigeonPost/main');
 
 const modules = {
   birdman,
-  'pigeon-post': pigeonPost
+  pigeonPost
 };
 
 commander
