@@ -48,7 +48,7 @@ function broadcastNewTweet(data) {
   const parsedData = JSON.parse(data);
   const decodedData = redisService.decodeData(parsedData.data);
 
-  kalmServer.emit('tweet', decodedData);
+  kalmServer.broadcast('tweet', decodedData);
 }
 
 module.exports = {

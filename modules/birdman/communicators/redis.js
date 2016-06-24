@@ -16,6 +16,8 @@ const rsmqConfigs = {
   qname: config.get('RSMQ_QUEUE_NAME')
 };
 
+const REDIS_TWEETS_SET = `${config.get('REDIS_TWEETS_SET')}:${config.get('TWITTER_USER_ID_TO_FOLLOW')}`;
+
 /**
  * Checks if queue for messaging exists. If not - creating a new queue
  *
@@ -66,6 +68,7 @@ function mapTweet(tweet) {
     'entities', tweet.entities,
     'user:name', tweet.user.name,
     'user:url', tweet.user.url,
+    'created_at', tweet.created_at,
     'user:profileImageUrlHttps', tweet.user.profile_image_url_https
   ];
 }
@@ -119,10 +122,10 @@ function addTweetIdToTweetsSet(tweetsSet, tweet) {
 function processTweet(tweet) {
   return new Promise((resolve, reject) => {
     const tweetKey = getTweetKey(tweet.id);
-    const tweetsSet = config.get('REDIS_TWEETS_SET');
+    const tweetsSet = REDIS_TWEETS_SET;
 
-    if (tweet.delete) {
-      resolve();
+    if (!tweet.id) {
+      return resolve();
     }
 
     redisClient.sismember(tweetsSet, tweet.id, (error, member) => {

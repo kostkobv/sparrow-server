@@ -9,6 +9,8 @@ const redisClient = redis.createClient({
   db: config.get('REDIS_DB')
 });
 
+const REDIS_TWEETS_SET = `${config.get('REDIS_TWEETS_SET')}:${config.get('TWITTER_USER_ID_TO_FOLLOW')}`;
+
 /**
  * Retrieves last count of posts according to configs (TWITTER_LAST_POSTS_COUNT)
  *
@@ -16,7 +18,7 @@ const redisClient = redis.createClient({
  */
 function getLastPosts() {
   return new Promise((resolve) => {
-    redisClient.sort(config.get('REDIS_TWEETS_SET'), 'by', '*', 'get',
+    redisClient.sort(REDIS_TWEETS_SET, 'by', '*', 'get',
       `${config.get('REDIS_TWEET_PREFIX')}*`, 'desc', 'limit', '0',
       config.get('TWITTER_LAST_POSTS_COUNT'), (err, rawResult) => {
         if (err) {
